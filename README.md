@@ -1,8 +1,8 @@
-# Cerebro
+# Cortex
 
 **An orchestration layer for understanding and controlling swarms of AI agents.**
 
-Cerebro is a neural command center that enables real-time visualization, coordination, and control of 100+ autonomous AI agents. Originally built for Minecraft, the architecture is designed to scale across any multi-agent system.
+Cortex is a neural command center that enables real-time visualization, coordination, and control of 100+ autonomous AI agents. Originally built for Minecraft, the architecture is designed to scale across any multi-agent system.
 
 ![Orchestration](https://img.shields.io/badge/Orchestration-Multi--Agent-purple)
 ![Scale](https://img.shields.io/badge/Scale-100%2B%20Agents-blue)
@@ -10,9 +10,9 @@ Cerebro is a neural command center that enables real-time visualization, coordin
 
 ---
 
-## What is Cerebro?
+## What is Cortex?
 
-Cerebro provides a **hive-mind interface** for managing large-scale AI agent deployments:
+Cortex provides a **hive-mind interface** for managing large-scale AI agent deployments:
 
 - **Visualize** agent networks in real-time with an interactive neural graph
 - **Monitor** agent thoughts, emotions, commands, and status updates
@@ -50,7 +50,7 @@ Each agent has emotional intelligence:
 ### Bot Vision Integration
 Live camera feeds from agent perspectives:
 - Real-time view of what each leader sees
-- Embedded directly in the Cerebro UI
+- Embedded directly in the Cortex UI
 - Useful for debugging and monitoring
 
 ---
@@ -59,7 +59,7 @@ Live camera feeds from agent perspectives:
 
 ```
                       +------------------+
-                      |     CEREBRO      |
+                      |     CORTEX       |
                       |   Neural Command |
                       |      Center      |
                       +--------+---------+
@@ -93,7 +93,7 @@ Live camera feeds from agent perspectives:
 | Deployment | Agents | API Calls/Hour | Cost/Hour |
 |------------|--------|----------------|-----------|
 | Traditional | 100 | ~6,000 | $18.00 |
-| Cerebro | 100 | ~600 | $1.80 |
+| Cortex | 100 | ~600 | $1.80 |
 | **Savings** | - | **90%** | **$16.20** |
 
 ---
@@ -108,8 +108,8 @@ Live camera feeds from agent perspectives:
 ### Installation
 
 ```bash
-git clone https://github.com/Andre-swe/cerebro.git
-cd cerebro
+git clone https://github.com/Andre-swe/cortex.git
+cd cortex
 npm install
 cp keys.example.json keys.json
 # Add your API keys to keys.json
@@ -139,8 +139,8 @@ node main.js
 node main.js --hierarchy --leaders 3 --workers 97
 ```
 
-### Access Cerebro UI
-Open `http://localhost:8080/cerebro.html`
+### Access Cortex UI
+Open `http://localhost:8080/cortex.html`
 
 ---
 
@@ -162,13 +162,13 @@ Leaders coordinate workers with these directives:
 ## Project Structure
 
 ```
-cerebro/
+cortex/
 ├── src/
 │   ├── mindcraft/
 │   │   ├── mindserver.js      # Central orchestration
 │   │   ├── command_relay.js   # Leader→Worker routing
 │   │   └── public/
-│   │       └── cerebro.html   # Neural command UI
+│   │       └── cortex.html    # Neural command UI
 │   ├── agent/
 │   │   ├── agent.js           # Full LLM agent
 │   │   ├── worker_bot.js      # Lightweight worker
@@ -221,13 +221,13 @@ Built-in OBS overlays in `stream/`:
 
 ---
 
-## Extending Cerebro
+## Extending Cortex
 
-Cerebro's architecture is modular. Key extension points:
+Cortex's architecture is modular. Key extension points:
 
 1. **New Agent Types**: Extend `worker_bot.js` for specialized workers
 2. **Custom Commands**: Add to `src/agent/commands/actions.js`
-3. **UI Customization**: Modify `cerebro.html` for different visualizations
+3. **UI Customization**: Modify `cortex.html` for different visualizations
 4. **New Providers**: Add LLM integrations in `src/models/`
 
 ---
@@ -237,8 +237,8 @@ Cerebro's architecture is modular. Key extension points:
 > **Warning**: The `allow_insecure_coding` option permits LLM-generated code execution. Use Docker for isolation when enabled.
 
 ```bash
-docker build -t cerebro .
-docker run -p 8080:8080 -p 3000-3003:3000-3003 cerebro
+docker build -t cortex .
+docker run -p 8080:8080 -p 3000-3003:3000-3003 cortex
 ```
 
 ---
@@ -250,5 +250,5 @@ MIT License - See [LICENSE](LICENSE)
 ---
 
 <p align="center">
-  <strong>Cerebro</strong> - Command your swarm.
+  <strong>Cortex</strong> - Command your swarm.
 </p>
