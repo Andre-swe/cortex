@@ -7,7 +7,6 @@ Cerebro is a neural command center that enables real-time visualization, coordin
 ![Orchestration](https://img.shields.io/badge/Orchestration-Multi--Agent-purple)
 ![Scale](https://img.shields.io/badge/Scale-100%2B%20Agents-blue)
 ![Real-time](https://img.shields.io/badge/Monitoring-Real--time-green)
-![Cost](https://img.shields.io/badge/Cost%20Savings-90%25-orange)
 
 ---
 
@@ -82,7 +81,6 @@ Live camera feeds from agent perspectives:
    +-----+-----+         +-----+-----+         +-----+-----+
    |  Workers  |         |  Workers  |         |  Workers  |
    |   1-33    |         |   34-66   |         |   67-97   |
-   |  No LLM   |         |  No LLM   |         |  No LLM   |
    +-----------+         +-----------+         +-----------+
 ```
 
