@@ -1,19 +1,19 @@
 const settings = {
     "minecraft_version": "auto", // or specific version like "1.21.6"
-    "host": "localhost", // or "your.server.ip.here"
+    "host": "148.113.198.238", // or "your.server.ip.here"
     "port": 27000, // set to -1 to automatically scan for open ports
     "auth": "offline", // or "microsoft"
 
     // the mindserver manages all agents and hosts the UI
-    "mindserver_port": 8080,
-    "auto_open_ui": true, // opens UI in browser on startup
+    "mindserver_port": 27004,
+    "auto_open_ui": false, // opens UI in browser on startup
 
     // Hierarchy mode for 100-agent scaling with leaders and workers
-    "hierarchy_mode": false, // enable leader-worker hierarchy
+    "hierarchy_mode": true, // enable leader-worker hierarchy
     "thought_tick_interval": 45000, // ms between batched LLM calls for leaders (45 seconds)
     "workers_per_leader": 32, // number of workers assigned to each leader
-    "worker_spawn_delay": 3000, // ms delay between worker spawns (increased to reduce server load)
-    "worker_spawn_batch_size": 5, // number of workers to spawn in parallel (reduced batch size)
+    "worker_spawn_delay": 12000, // ms delay between worker spawns (increased to reduce server load)
+    "worker_spawn_batch_size": 2, // number of workers to spawn in parallel (reduced batch size)
     "hierarchy": {
         // Leaders with full LLM capabilities (30-second thought tick)
         "leaders": [
