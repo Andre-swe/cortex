@@ -7,6 +7,46 @@ import fs from 'fs';
 import path from 'path';
 import { sendRelationshipUpdate } from '../mindserver_proxy.js';
 
+
+// Blocked names - prevent relationships with common words that aren't real entities
+const BLOCKED_RELATIONSHIP_NAMES = new Set([
+    'humans', 'human', 'everyone', 'nobody', 'someone', 'anyone', 'all',
+    'players', 'bots', 'mobs', 'entities', 'world', 'server', 'minecraft',
+    'system', 'admin', 'console', 'the', 'a', 'an', 'this', 'that',
+    'player', 'bot', 'mob', 'entity', 'block', 'item', 'inventory',
+    'you', 'me', 'i', 'we', 'they', 'them', 'us', 'it', 'he', 'she',
+    'here', 'there', 'now', 'later', 'always', 'never'
+]);
+
+/**
+ * Validate if a name is a valid relationship target
+ */
+function isValidRelationshipTarget(name, selfName = null) {
+    if (!name || typeof name !== 'string') return false;
+
+    const normalized = name.toLowerCase().trim();
+
+    // Reject self-relationships
+    if (selfName && normalized === selfName.toLowerCase().trim()) return false;
+
+    // Reject empty or very short names
+    if (normalized.length < 2) return false;
+
+    // Reject if in blocked list
+    if (BLOCKED_RELATIONSHIP_NAMES.has(normalized)) return false;
+
+    // Reject if it looks like a sentence or phrase (contains spaces)
+    if (normalized.includes(' ') && normalized.split(' ').length > 2) return false;
+
+    // Reject if starts with common non-name words
+    if (/^(the|a|an|some|any|all|no|every)$/i.test(normalized)) return false;
+
+    // Reject if it's a pronoun
+    if (/^(i|me|my|you|your|he|she|it|we|they|them|us|his|her|its|our|their)$/i.test(normalized)) return false;
+
+    return true;
+}
+
 class Relationship {
     constructor(targetName, isBot = false) {
         this.target = targetName;
@@ -352,6 +392,11 @@ class RelationshipManager {
      * Get or create relationship with an entity
      */
     getRelationship(targetName, isBot = false) {
+        // Validate target name to prevent ghost and self relationships
+        if (!isValidRelationshipTarget(targetName, this.botName)) {
+            return null;
+        }
+
         if (!this.relationships.has(targetName)) {
             this.relationships.set(targetName, new Relationship(targetName, isBot));
         }
@@ -363,6 +408,12 @@ class RelationshipManager {
      */
     recordInteraction(targetName, type, details = {}, isBot = false) {
         const rel = this.getRelationship(targetName, isBot);
+
+        // Skip if relationship was rejected (invalid target)
+        if (!rel) {
+            return null;
+        }
+
         rel.recordInteraction(type, details);
 
         // Send relationship update to Cerebro UI
@@ -491,6 +542,11 @@ class RelationshipManager {
      * Get relationship context for cognitive engine
      */
     getRelationshipContext(targetName) {
+        // Validate target name
+        if (!isValidRelationshipTarget(targetName)) {
+            return null;
+        }
+
         const rel = this.relationships.get(targetName);
         if (!rel) return null;
 

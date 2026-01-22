@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CEREBRO - Neural Hive Interface</title>
+    <title>CORTEX - Neural Hive Interface</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <script src="/socket.io/socket.io.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -51,6 +52,54 @@
             background: var(--abyss);
             font-family: 'Oxanium', sans-serif;
             color: var(--text-primary);
+        }
+
+        
+        .agent-filter-indicator {
+            position: fixed;
+            top: 64px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, var(--elevated), var(--surface));
+            border: 1px solid var(--cyan-dim);
+            border-radius: 8px;
+            padding: 8px 16px;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            z-index: 300;
+            box-shadow: 0 4px 20px rgba(0, 255, 255, 0.2);
+        }
+
+        .agent-filter-indicator.visible {
+            display: flex;
+        }
+
+        .agent-filter-indicator .filter-text {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .agent-filter-indicator .filter-name {
+            color: var(--cyan-glow);
+            font-weight: 600;
+        }
+
+        .agent-filter-indicator .clear-filter {
+            background: var(--error-red);
+            border: none;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            font-family: 'Oxanium', sans-serif;
+            transition: all 0.2s;
+        }
+
+        .agent-filter-indicator .clear-filter:hover {
+            background: #dc2626;
+            transform: scale(1.05);
         }
 
         /* ========== BACKGROUND LAYERS ========== */
@@ -216,6 +265,41 @@
         }
 
         .status-dot.offline { background: var(--error-red); box-shadow: 0 0 10px var(--error-red); }
+
+        /* Music Control */
+        .music-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            background: var(--surface);
+            border: 1px solid var(--cyan-faint);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-left: 12px;
+        }
+
+        .music-btn:hover {
+            background: var(--elevated);
+            border-color: var(--cyan-dim);
+        }
+
+        .music-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: var(--cyan-glow);
+            transition: fill 0.2s ease;
+        }
+
+        .music-btn.muted svg {
+            fill: var(--text-muted);
+        }
+
+        .music-btn.muted {
+            border-color: var(--text-muted);
+        }
 
         @keyframes statusBlink {
             0%, 100% { opacity: 1; }
@@ -1187,7 +1271,7 @@
             <div class="brand">
                 <div class="brand-icon"></div>
                 <div class="brand-text">
-                    <div class="brand-title">CEREBRO</div>
+                    <div class="brand-title">CORTEX</div>
                     <div class="brand-sub">NEURAL HIVE INTERFACE</div>
                 </div>
             </div>
@@ -1211,7 +1295,20 @@
                 <div class="status-dot" id="statusDot"></div>
                 <span class="status-text" id="connectionStatus">CONNECTING</span>
             </div>
+
+            <button class="music-btn" id="musicBtn" title="Toggle Music">
+                <svg viewBox="0 0 24 24" id="musicIcon">
+                    <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                </svg>
+            </button>
         </header>
+
+    <!-- Agent Filter Indicator -->
+    <div class="agent-filter-indicator" id="agentFilterIndicator">
+        <span class="filter-text">Filtering: <span class="filter-name" id="filterAgentName"></span></span>
+        <button class="clear-filter" id="clearAgentFilter">✕ CLEAR</button>
+    </div>
+
 
         <!-- Main Canvas Area -->
         <div class="main-container">
@@ -1309,7 +1406,46 @@
     <div class="scanlines"></div>
     <div class="vignette"></div>
 
+    <!-- Background Music -->
+    <audio id="bgMusic" loop preload="auto">
+        <source src="/music.mp3" type="audio/mpeg">
+    </audio>
+
     <script>
+        // ========== MUSIC CONTROL ==========
+        const bgMusic = document.getElementById('bgMusic');
+        const musicBtn = document.getElementById('musicBtn');
+        const musicIcon = document.getElementById('musicIcon');
+
+        bgMusic.volume = 0.4;
+
+        // Muted speaker icon SVG path
+        const mutedPath = 'M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z';
+        const unmutedPath = 'M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z';
+
+        let isMuted = false;
+
+        // Try to autoplay (may be blocked by browser)
+        function tryAutoplay() {
+            bgMusic.play().catch(() => {
+                // Autoplay blocked - wait for user interaction
+                document.addEventListener('click', function startMusic() {
+                    bgMusic.play();
+                    document.removeEventListener('click', startMusic);
+                }, { once: true });
+            });
+        }
+
+        // Start music when page loads
+        window.addEventListener('load', tryAutoplay);
+
+        musicBtn.addEventListener('click', () => {
+            isMuted = !isMuted;
+            bgMusic.muted = isMuted;
+            musicBtn.classList.toggle('muted', isMuted);
+            musicIcon.innerHTML = `<path d="${isMuted ? mutedPath : unmutedPath}"/>`;
+        });
+
         // ========== DATA STRUCTURES ==========
         const leaders = new Map();
         const workers = new Map();
@@ -1348,6 +1484,7 @@
         let selectedBot = null;
         let frame = 0;
         let currentFilter = 'all';
+        let selectedAgent = null;
 
         function resizeCanvas() {
             const rect = canvasArea.getBoundingClientRect();
@@ -1641,9 +1778,12 @@
             if (clicked) {
                 selectedBot = clicked.name;
                 showBotDetail(clicked);
+                // Set agent filter
+                setAgentFilter(clicked.name);
             } else {
                 selectedBot = null;
                 hideBotDetail();
+                // Don't clear filter on empty click - use the clear button
             }
         });
 
@@ -1825,10 +1965,13 @@
                 return 'command';
             }
 
-            // Filter out debug/system messages - don't show these at all
+            // Filter out debug/system messages and errors - don't show these at all
             if (msg.match(/\b(auto-prompt|self-prompt|prompting|Code output|Code execution|Action output)\b/i) ||
                 msg.match(/^Agent (did not|executed|wrote|hallucinated)/i) ||
-                msg.match(/\b(Stopping auto-prompting|starting self-prompt|Code finished)\b/i)) {
+                msg.match(/\b(Stopping auto-prompting|starting self-prompt|Code finished)\b/i) ||
+                msg.match(/\bERROR\b/i) ||
+                msg.match(/^Error:/i) ||
+                msg.match(/\b(error|exception|failed|failure|stack trace|traceback)\b/i)) {
                 return 'debug'; // Will be filtered out
             }
 
@@ -1901,9 +2044,13 @@
             const botClass = item.botType || (leaders.has(item.agent) ? 'leader' : 'worker');
             div.className = `feed-item ${category} ${botClass}`;
             div.dataset.category = category;
+            div.dataset.agent = item.agent;
 
-            // Apply filter visibility
-            if (currentFilter !== 'all' && category !== currentFilter) {
+            // Apply filter visibility (both category and agent filters)
+            const categoryMatch = (currentFilter === 'all') || (category === currentFilter);
+            const agentMatch = !selectedAgent || (item.agent === selectedAgent);
+
+            if (!categoryMatch || !agentMatch) {
                 div.style.display = 'none';
             }
 
@@ -1993,10 +2140,15 @@
             let shown = 0, hidden = 0;
             items.forEach(item => {
                 const itemCat = item.dataset.category;
-                if (currentFilter === 'all') {
-                    item.style.display = '';
-                    shown++;
-                } else if (itemCat === currentFilter) {
+                const itemAgent = item.dataset.agent;
+
+                // Check category filter
+                const categoryMatch = (currentFilter === 'all') || (itemCat === currentFilter);
+
+                // Check agent filter
+                const agentMatch = !selectedAgent || (itemAgent === selectedAgent);
+
+                if (categoryMatch && agentMatch) {
                     item.style.display = '';
                     shown++;
                 } else {
@@ -2004,8 +2156,26 @@
                     hidden++;
                 }
             });
-            console.log('Filter applied:', currentFilter, 'Shown:', shown, 'Hidden:', hidden);
+            console.log('Filter applied:', currentFilter, 'Agent:', selectedAgent || 'all', 'Shown:', shown, 'Hidden:', hidden);
         }
+
+        
+        // ========== AGENT FILTER ==========
+        function setAgentFilter(agentName) {
+            selectedAgent = agentName;
+            document.getElementById('filterAgentName').textContent = agentName;
+            document.getElementById('agentFilterIndicator').classList.add('visible');
+            applyFeedFilter();
+        }
+
+        function clearAgentFilter() {
+            selectedAgent = null;
+            document.getElementById('agentFilterIndicator').classList.remove('visible');
+            applyFeedFilter();
+        }
+
+        // Clear filter button handler
+        document.getElementById('clearAgentFilter').onclick = clearAgentFilter;
 
         // ========== SOCKET CONNECTION ==========
         const socket = io();
@@ -2090,15 +2260,16 @@
                 worker.gamePosition = status.position || worker.gamePosition;
             }
 
-            if (status.status === 'completed' || status.status === 'error') {
+            if (status.status === 'completed') {
                 addFeedItem({
                     agent: status.worker,
                     botType: 'worker',
                     category: 'status',
-                    content: status.message || `Task ${status.status}`,
+                    content: status.message || 'Task completed',
                     timestamp: status.timestamp
                 });
             }
+            // Skip error status messages - they won't be shown
         });
 
         socket.on('soul-event', (agentName, event) => {
@@ -2261,7 +2432,7 @@
                         ${isOnline ? `
                             <iframe
                                 class="vision-iframe"
-                                src="http://localhost:${port}"
+                                src="/vision/${name.toLowerCase()}/"
                                 id="vision-iframe-${name}"
                                 sandbox="allow-scripts allow-same-origin"
                                 loading="lazy"

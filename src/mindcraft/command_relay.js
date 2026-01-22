@@ -185,7 +185,7 @@ export class CommandRelay {
     }
 
     /**
-     * Get all workers status (for Cerebro UI).
+     * Get all workers status (for Cortex UI).
      */
     getAllWorkersStatus() {
         const status = [];

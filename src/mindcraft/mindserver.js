@@ -1,7 +1,8 @@
 import { Server } from 'socket.io';
+import path from 'path';
+import fs from 'fs';
 import express from 'express';
 import http from 'http';
-import path from 'path';
 import { fileURLToPath } from 'url';
 import * as mindcraft from './mindcraft.js';
 import { readFileSync } from 'fs';
@@ -17,7 +18,51 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 let io;
 let server;
 const agent_connections = {};
-const worker_connections = {}; // workerName -> { socket, leader, settings }
+const worker_connections = {};
+const relationship_cache = new Map();  // Cache relationships for new clients // workerName -> { socket, leader, settings }
+
+// Load saved relationships from bot files
+function loadSavedRelationships() {
+    const botsDir = './bots';
+    try {
+        if (!fs.existsSync(botsDir)) return;
+
+        const botFolders = fs.readdirSync(botsDir);
+        for (const botName of botFolders) {
+            const relPath = path.join(botsDir, botName, 'relationships.json');
+            if (fs.existsSync(relPath)) {
+                try {
+                    const data = JSON.parse(fs.readFileSync(relPath, 'utf8'));
+                    if (data.relationships) {
+                        for (const [target, rel] of Object.entries(data.relationships)) {
+                            const key = [botName, target].sort().join('-');
+                            relationship_cache.set(key, {
+                                agent: botName,
+                                target: target,
+                                trust: rel.trust || 0,
+                                respect: rel.respect || 0,
+                                familiarity: rel.fondness || 0,
+                                affection: rel.fondness || 0,
+                                type: rel.type || 'stranger',
+                                interactionCount: rel.totalInteractions || 0,
+                                timestamp: rel.lastInteraction || Date.now()
+                            });
+                        }
+                    }
+                } catch (e) {
+                    console.log(`[MindServer] Could not load relationships for ${botName}: ${e.message}`);
+                }
+            }
+        }
+        console.log(`[MindServer] Loaded ${relationship_cache.size} relationships from saved files`);
+    } catch (e) {
+        console.log(`[MindServer] Error loading saved relationships: ${e.message}`);
+    }
+}
+
+// Load relationships on startup
+loadSavedRelationships();
+
 const agent_listeners = [];
 
 const settings_spec = JSON.parse(readFileSync(path.join(__dirname, 'public/settings_spec.json'), 'utf8'));
@@ -256,11 +301,23 @@ export function createMindServer(host_public = false, port = 8080) {
         });
 
         socket.on('relationship-update', (data) => {
+            // Cache the relationship for new client connections
+            const key = [data.agent, data.target].sort().join('-');
+            relationship_cache.set(key, {
+                ...data,
+                timestamp: Date.now()
+            });
+
             io.emit('relationship-update', data);
         });
 
         socket.on('listen-to-agents', () => {
             addListener(socket);
+
+            // Send cached relationships to new client
+            relationship_cache.forEach((rel, key) => {
+                socket.emit('relationship-update', rel);
+            });
         });
 
         // ============ WORKER EVENTS ============
