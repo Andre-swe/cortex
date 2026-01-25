@@ -4,7 +4,7 @@
     "is_leader": true,
     "allow_vision": true,
     "personality": {
-        "chattiness": 0.05,
+        "chattiness": 0.5,
         "responseDelay": {
             "min": 1500,
             "max": 3500

@@ -1,6 +1,7 @@
 import settings from './settings.js';
 import { containsCommand } from './commands/index.js';
-import { sendBotChatToServer } from './mindserver_proxy.js';
+import { sendBotChatToServer, serverProxy } from './mindserver_proxy.js';
+import conversationCoordinator from './conversation_coordinator.js';
 
 let agent;
 let agent_names = [];
@@ -294,10 +295,20 @@ async function _scheduleProcessInMessage(sender, received, convo) {
             scheduleResponse(fastDelay);
         }
         else {
-            let shouldRespond = await agent.prompter.promptShouldRespondToBot(received.message);
-            console.log(`${agent.name} decided to ${shouldRespond?'respond':'not respond'} to ${sender}`);
-            if (shouldRespond)
-                scheduleResponse(fastDelay);
+            // Use cognitive engine for intelligent decision (soul system)
+            const otherBots = serverProxy.getOtherAgentNames().filter(n => n !== agent.name);
+            const decision = await conversationCoordinator.shouldRespond(
+                agent.name,
+                sender,
+                received.message,
+                otherBots
+            );
+            console.log(`${agent.name} decided to ${decision.shouldRespond?'respond':'not respond'} to ${sender} (reason: ${decision.reason}, emotion: ${decision.emotion || 'neutral'})`);
+            if (decision.shouldRespond) {
+                // Use the delay from the decision (emotion-aware)
+                const delay = decision.delay || fastDelay;
+                scheduleResponse(delay);
+            }
         }
     }
     else {
@@ -324,9 +335,12 @@ function _compileInMessages(convo) {
 
 function _handleFullInMessage(sender, received) {
     console.log(`${agent.name} responding to "${received.message}" from ${sender}`);
-    
+
     const convo = convoManager._getConvo(sender);
     convo.active = true;
+
+    // Record the incoming bot message in soul system for relationship tracking
+    conversationCoordinator.recordIncomingMessage(sender, received.message, true);
 
     let message = _tagMessage(received.message);
     if (received.end) {
@@ -337,6 +351,10 @@ function _handleFullInMessage(sender, received) {
     else if (received.start)
         agent.shut_up = false;
     convo.inMessageTimer = null;
+
+    // Record that we're responding (for soul state tracking)
+    conversationCoordinator.recordResponse(agent.name, sender, message);
+
     agent.handleMessage(sender, message);
 }
 
