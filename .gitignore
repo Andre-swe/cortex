@@ -33,3 +33,4 @@ src/mindcraft-py/__pycache__/
 whitelist_commands.txt
 *.log
 .claude/
+CLAUDE.md
